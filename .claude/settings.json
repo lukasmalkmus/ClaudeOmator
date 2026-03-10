@@ -1,0 +1,15 @@
+{
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cp -R /tmp/ClaudeOmator-build/* /Applications/*)",
+      "Bash(open /Applications/ClaudeOmator.app*)",
+      "Bash(pkill * ClaudeOmator*)",
+      "Bash(trash /Applications/ClaudeOmator.app*)",
+      "Bash(xcodebuild -project *ClaudeOmator*)",
+      "mcp__xcode__*"
+    ]
+  }
+}

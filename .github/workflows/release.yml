@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: macos-26
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (Release)
+        run: |
+          xcodebuild \
+            -project ClaudeOmator.xcodeproj \
+            -scheme ClaudeOmator \
+            -configuration Release \
+            -derivedDataPath /tmp/derived-data \
+            -disableAutomaticPackageResolution \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Create zip archive
+        run: |
+          cd /tmp/derived-data/Build/Products/Release
+          zip -r --symlinks "$GITHUB_WORKSPACE/ClaudeOmator.app.zip" ClaudeOmator.app
+
+      - name: Delete existing rolling release
+        run: gh release delete latest --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push updated tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f latest
+          git push origin latest --force
+
+      - name: Create rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          body: |
+            Rolling build from [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) on `main`.
+
+            > This is an unsigned build. macOS will flag it as unidentified.
+            > Right-click the app and select **Open** to bypass Gatekeeper.
+          prerelease: true
+          make_latest: true
+          files: ClaudeOmator.app.zip
