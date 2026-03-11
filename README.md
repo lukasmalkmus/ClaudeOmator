@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ClaudeOmator/ClaudeOmator.icon/Assets/icon.png" width="200" alt="ClaudeOmator icon" />
+  <img src=".github/images/icon.png" width="256" alt="ClaudeOmator icon" />
 </p>
 
 <h1 align="center">ClaudeOmator</h1>
