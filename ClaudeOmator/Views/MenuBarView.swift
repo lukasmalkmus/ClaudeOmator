@@ -80,6 +80,9 @@ struct MenuBarView: View {
         if let lastRun = workflow.lastRun {
             return lastRun.status.systemImage
         }
+        if workflow.isEnabled, case .schedule = workflow.trigger {
+            return "clock"
+        }
         return "circle"
     }
 
