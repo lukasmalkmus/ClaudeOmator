@@ -287,8 +287,7 @@ final class WorkflowEngine {
 
     func nextRunDate(for workflow: Workflow) -> Date? {
         guard case .schedule(let schedule) = workflow.trigger else { return nil }
-        let reference = workflow.lastRun?.timestamp ?? Date()
-        return schedule.nextFireDate(after: reference)
+        return schedule.nextFireDate(after: Date())
     }
 
     private func sleepDuration(for schedule: RecurrenceSchedule) -> Duration {
