@@ -124,7 +124,7 @@ struct WorkflowEditorView: View {
                             HStack {
                                 Image(systemName: entry.status.systemImage)
                                     .foregroundStyle(entry.status.color)
-                                Text(entry.completedAt ?? entry.startedAt, style: .relative)
+                                Text("\(entry.completedAt ?? entry.startedAt, style: .relative) ago")
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .foregroundStyle(.tertiary)

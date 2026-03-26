@@ -53,7 +53,7 @@ struct WorkflowOutputView: View {
                             .foregroundStyle(.secondary)
                     }
                     if let time = entry?.completedAt ?? entry?.startedAt {
-                        Text(time, style: .relative)
+                        Text("\(time, style: .relative) ago")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -125,6 +125,12 @@ struct WorkflowOutputView: View {
                 .padding()
             }
             .defaultScrollAnchor(.bottom)
+        }
+        .onAppear {
+            if let text = liveOutput?.text, !text.isEmpty, styledLength == 0 {
+                styledCache = Self.styleLines(text)
+                styledLength = text.count
+            }
         }
         .onChange(of: liveOutput?.text) { oldValue, newValue in
             guard let text = newValue, text.count > styledLength else {

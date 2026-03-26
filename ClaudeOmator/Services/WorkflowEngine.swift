@@ -15,7 +15,7 @@ final class WorkflowEngine {
     private(set) var runningWorkflows: Set<UUID> = []
     private(set) var claudeAvailable: Bool?
 
-    @ObservationIgnored private(set) var liveOutputBuffers: [UUID: LiveOutputBuffer] = [:]
+    private(set) var liveOutputBuffers: [UUID: LiveOutputBuffer] = [:]
     @ObservationIgnored private var outputBuffers: [UUID: [String]] = [:]
     @ObservationIgnored private var outputLengths: [UUID: Int] = [:]
 

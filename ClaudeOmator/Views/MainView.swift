@@ -313,7 +313,7 @@ struct MainView: View {
                             .accessibilityLabel(entry.status.label)
                         VStack(alignment: .leading) {
                             Text(entry.workflowName)
-                            Text(entry.completedAt ?? entry.startedAt, style: .relative)
+                            Text("\(entry.completedAt ?? entry.startedAt, style: .relative) ago")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
