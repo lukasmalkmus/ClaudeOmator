@@ -182,6 +182,7 @@ final class WorkflowEngine {
                             break
                         }
                     }
+                    try Task.checkCancellation()
                     entry.status = .succeeded
                     entry.resultSummary = outputText
                     entry.output = liveOutputBuffers[workflowID]?.text
