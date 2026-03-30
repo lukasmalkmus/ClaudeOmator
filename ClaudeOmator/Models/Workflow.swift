@@ -67,6 +67,7 @@ enum PermissionMode: String, Codable, Sendable, CaseIterable, Identifiable {
     case `default`
     case plan
     case auto
+    case bypassAll
 
     var id: String { rawValue }
 
@@ -75,6 +76,7 @@ enum PermissionMode: String, Codable, Sendable, CaseIterable, Identifiable {
         case .default: "Default"
         case .plan: "Plan"
         case .auto: "Auto (Accept Edits)"
+        case .bypassAll: "Bypass All"
         }
     }
 }

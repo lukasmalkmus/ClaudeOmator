@@ -134,6 +134,8 @@ final class WorkflowEngine {
                         options.permissionMode = .plan
                     case .auto:
                         options.permissionMode = .acceptEdits
+                    case .bypassAll:
+                        options.permissionMode = .bypassPermissions
                     }
                 }
                 let result = try await client.runSinglePrompt(
