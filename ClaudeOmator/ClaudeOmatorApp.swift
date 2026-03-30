@@ -46,6 +46,7 @@ struct ClaudeOmatorApp: App {
         appDelegate.navigationState = nav
         appDelegate.activityStore = a
         appDelegate.engine = e
+        appDelegate.workflowStore = s
 
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,

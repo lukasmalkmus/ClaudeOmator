@@ -108,25 +108,94 @@ final class WorkflowStore {
 
     // MARK: - Persistence
 
+    private(set) var failedWorkflowNames: [String] = []
+
+    var showLoadWarning: Bool {
+        !failedWorkflowNames.isEmpty
+    }
+
+    private var canSave: Bool {
+        !workflows.isEmpty || failedWorkflowNames.isEmpty
+    }
+
     private struct StorageContainer: Codable {
         var version: Int = 2
         var workflows: [Workflow]
         var groups: [WorkflowGroup]
     }
 
-    private func load() {
-        guard let data = readNoFollow(fileURL) else { return }
+    private struct ResilientWorkflow: Decodable {
+        let workflow: Workflow?
 
-        do {
-            let container = try JSONDecoder().decode(StorageContainer.self, from: data)
-            workflows = container.workflows
-            groups = container.groups
-        } catch {
-            Self.logger.error("Failed to load workflows: \(error, privacy: .private)")
+        init(from decoder: Decoder) throws {
+            workflow = try? Workflow(from: decoder)
         }
     }
 
+    private struct ResilientContainer: Decodable {
+        var version: Int = 2
+        var workflows: [ResilientWorkflow]
+        var groups: [WorkflowGroup]
+    }
+
+    private struct WorkflowNameOnly: Decodable {
+        let id: UUID
+        let name: String
+    }
+
+    private struct NameOnlyContainer: Decodable {
+        var workflows: [WorkflowNameOnly]
+    }
+
+    private func load() {
+        let backupURL = fileURL.appendingPathExtension("bak")
+
+        if let data = readNoFollow(fileURL) {
+            if let result = decodeResilient(data) {
+                workflows = result.workflows
+                groups = result.groups
+                failedWorkflowNames = result.failedNames
+                let failedCount = result.failedNames.count
+                if failedCount > 0 {
+                    Self.logger.warning("Failed to decode \(failedCount) workflow(s)")
+                }
+                return
+            }
+        }
+
+        if let backupData = readNoFollow(backupURL) {
+            if let result = decodeResilient(backupData) {
+                workflows = result.workflows
+                groups = result.groups
+                failedWorkflowNames = result.failedNames
+                let failedCount = result.failedNames.count
+                Self.logger.warning("Restored from backup (\(failedCount) failed)")
+                return
+            }
+        }
+    }
+
+    private func decodeResilient(_ data: Data) -> (workflows: [Workflow], groups: [WorkflowGroup], failedNames: [String])? {
+        guard let resilient = try? JSONDecoder().decode(ResilientContainer.self, from: data) else {
+            return nil
+        }
+
+        let decoded = resilient.workflows.compactMap(\.workflow)
+        let decodedIDs = Set(decoded.map(\.id))
+
+        var failedNames: [String] = []
+        if decoded.count < resilient.workflows.count {
+            let allNames = try? JSONDecoder().decode(NameOnlyContainer.self, from: data)
+            failedNames = allNames?.workflows
+                .filter { !decodedIDs.contains($0.id) }
+                .map(\.name) ?? []
+        }
+
+        return (decoded, resilient.groups, failedNames)
+    }
+
     func saveNow() {
+        guard canSave else { return }
         saveTask?.cancel()
         save()
     }
@@ -134,6 +203,7 @@ final class WorkflowStore {
     private func save() {
         let container = StorageContainer(workflows: workflows, groups: groups)
         let url = fileURL
+        let backupURL = url.appendingPathExtension("bak")
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
@@ -149,6 +219,11 @@ final class WorkflowStore {
         let logger = Self.logger
         Task.detached(priority: .utility) {
             do {
+                let fm = FileManager.default
+                if fm.fileExists(atPath: url.path) {
+                    try? fm.removeItem(at: backupURL)
+                    try? fm.copyItem(at: url, to: backupURL)
+                }
                 try writeNoFollow(url, data: data)
             } catch {
                 logger.error("Failed to write workflows: \(error, privacy: .private)")
@@ -157,6 +232,7 @@ final class WorkflowStore {
     }
 
     private func scheduleSave() {
+        guard canSave else { return }
         saveTask?.cancel()
         saveTask = Task {
             try? await Task.sleep(for: .milliseconds(500))

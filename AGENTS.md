@@ -27,11 +27,15 @@ xcodebuild -project ClaudeOmator.xcodeproj -scheme ClaudeOmator build
 
 ## Install & Test
 
-After building, install to `/Applications` and relaunch to test the real app:
+After building, install to `/Applications` and relaunch to test the real app.
+
+**ClaudeOmator is a login item.** macOS auto-relaunches it after `pkill`. Use
+`osascript -e 'quit app "ClaudeOmator"'` for a graceful quit that persists data
+and does not trigger auto-relaunch:
 
 ```bash
-pkill -9 -f ClaudeOmator 2>/dev/null
-sleep 0.5
+osascript -e 'quit app "ClaudeOmator"' 2>/dev/null
+sleep 1
 xcodebuild -project ClaudeOmator.xcodeproj -scheme ClaudeOmator -configuration Release \
   -derivedDataPath /tmp/ClaudeOmator-build build
 trash /Applications/ClaudeOmator.app
@@ -39,10 +43,13 @@ cp -R /tmp/ClaudeOmator-build/Build/Products/Release/ClaudeOmator.app /Applicati
 open /Applications/ClaudeOmator.app
 ```
 
-Kill the running instance first; the app enforces single-instance via bundle ID check
-in `AppDelegate.ensureSingleInstance()`. A duplicate will activate the existing instance
-and terminate itself. Running from multiple paths (Xcode debug, `/tmp`, `/Applications`)
-simultaneously is prevented.
+**Do NOT use `pkill -9`.** SIGKILL skips `willTerminateNotification` (data not saved)
+and macOS immediately re-spawns the login item, creating a race where the old instance
+overwrites `workflows.json` with empty state before the new binary is in place.
+
+The app enforces single-instance via bundle ID check in
+`AppDelegate.ensureSingleInstance()`. A duplicate will activate the existing instance
+and terminate itself.
 
 ## UI Feedback Loop
 

@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     var openWindowAction: OpenWindowAction?
 
     var engine: WorkflowEngine?
+    var workflowStore: WorkflowStore?
 
     static let notificationCategoryID = "WORKFLOW_RESULT"
 
@@ -33,6 +34,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             intentIdentifiers: []
         )
         center.setNotificationCategories([category])
+
+        if let store = workflowStore, store.showLoadWarning {
+            let names = store.failedWorkflowNames.joined(separator: "\n")
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Some workflows could not be loaded"
+            alert.informativeText = "The following workflows failed to load and were skipped:\n\n\(names)\n\nThe backup file may contain the original data."
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
     }
 
     // MARK: - Window & Dock Icon
